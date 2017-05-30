@@ -1,0 +1,4 @@
+
+NICK nickname
+USER name host ip :fullname
+QUIT :quitmsg

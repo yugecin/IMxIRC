@@ -1,0 +1,84 @@
+<project name="IMxIRC" default="hi">
+
+	<property name="dir.src" value="${basedir}/src" />
+	<property name="dir.lib" value="${basedir}/lib" />
+	<property name="dir.out" value="${basedir}/bin" />
+
+	<property name="lang.src" value="1.7" />
+	<property name="lang.target" value="1.7" />
+	<property name="version" value="0.0.0" />
+
+	<property name="main" value="org.thisisgaming.robin.imxirc.MainKt" />
+
+	<typedef resource="org/jetbrains/kotlin/ant/antlib.xml" classpath="${dir.lib}/kotlin-ant.jar"/>
+
+	<target name="hi">
+		<echo>
+ant compile    --> compile the code
+ant run        --> prepare to run and run
+ant jar        --> package a jar
+		</echo>
+	</target>
+
+	<target name="clean" description="--> clean the ant working dir">
+		<delete dir="${dir.out}" />
+	</target>
+
+	<target name="compile" description="--> compile sources">
+		<delete dir="${dir.out}/classes" />
+		<mkdir dir="${dir.out}/classes" />
+
+		<javac
+				srcdir="${dir.src}"
+				destdir="${dir.out}/classes"
+				includes="**/*.java,**/*.kt"
+				source="${lang.src}"
+				target="${lang.target}"
+				includeantruntime="false"
+				classpathref="classpath.compile">
+			<withKotlin />
+		</javac>
+	</target>
+
+	<target name="run" depends="compile" description="--> run opsu!dance">
+		<java
+				fork="true"
+				dir="${dir.out}"
+				failonerror="false"
+				classpathref="classpath.run"
+				classname="${main}" />
+	</target>
+
+	<target name="jar" depends="compile" description="--> package a jar">
+		<property name="jarfile" value="${dir.out}/imxirc-${version}.jar" />
+		<delete file="${jarfile}" />
+
+		<jar jarfile="${dir.out}/lib.jar" roundup="false">
+			<zipgroupfileset dir="${dir.lib}" includes="kotlin-runtime.jar" />
+		</jar>
+
+		<jar destfile="${jarfile}" duplicate="fail">
+			<manifest>
+				<attribute name="Manifest-Version" value="1.0" />
+				<attribute name="Built-By" value="${user.name}" />
+				<attribute name="Main-Class" value="${main}" />
+			</manifest>
+			<fileset dir="${dir.out}/classes" />
+			<zipfileset src="${dir.out}/lib.jar">
+				<exclude name="META-INF/**" />
+			</zipfileset>
+		</jar>
+
+		<delete file="${dir.out}/lib.jar" />
+	</target>
+
+	<path id="classpath.compile">
+		<fileset dir="${dir.lib}" includes="kotlin-runtime.jar" />
+	</path>
+
+	<path id="classpath.run">
+		<pathelement path="${dir.out}/classes" />
+		<fileset dir="${dir.lib}" includes="*.jar" />
+	</path>
+
+</project>
