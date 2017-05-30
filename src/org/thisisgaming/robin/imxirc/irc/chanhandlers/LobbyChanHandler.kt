@@ -1,7 +1,10 @@
-package org.thisisgaming.robin.imxirc.irc
+package org.thisisgaming.robin.imxirc.irc.chanhandlers
 
 import org.thisisgaming.robin.imxirc.OP
-import org.thisisgaming.robin.imxirc.SERVERHOST
+import org.thisisgaming.robin.imxirc.irc.COLOR
+import org.thisisgaming.robin.imxirc.irc.IRCContext
+import org.thisisgaming.robin.imxirc.irc.IRCMessage
+import org.thisisgaming.robin.imxirc.irc.RESET
 
 class LobbyChanHandler(ctx: IRCContext) : IRCChanHandler(ctx, "Welcome to ImxIRC") {
 
@@ -10,10 +13,6 @@ class LobbyChanHandler(ctx: IRCContext) : IRCChanHandler(ctx, "Welcome to ImxIRC
         ctx.write(":${ctx.nickname} JOIN :##lobby")
         onJoin()
         sendMessage(OP, "${COLOR}04there's no escape$RESET")
-    }
-
-    override fun onMode(msg: IRCMessage) {
-        ctx.write(":$SERVERHOST 324 ${ctx.nickname} ##lobby +n")
     }
 
     override fun onMessage(msg: IRCMessage) {

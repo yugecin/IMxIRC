@@ -1,23 +1,26 @@
-package org.thisisgaming.robin.imxirc.irc
+package org.thisisgaming.robin.imxirc.irc.chanhandlers
 
 import org.thisisgaming.robin.imxirc.OP
 import org.thisisgaming.robin.imxirc.SERVERHOST
+import org.thisisgaming.robin.imxirc.irc.IRCContext
+import org.thisisgaming.robin.imxirc.irc.IRCMessage
 
 abstract class IRCChanHandler(val ctx: IRCContext, val topic: String) {
 
-    fun onJoin() {
+    open fun onJoin() {
         sendInitialTopic(topic)
-        onNames()
-    }
-
-    fun onNames() {
         ctx.write(":$SERVERHOST 353 ${ctx.nickname} = ##lobby :@$OP ${ctx.nickname}")
         ctx.write(":$SERVERHOST 366 ${ctx.nickname} ##lobby :End of /NAMES list.")
     }
 
-    abstract fun onPart()
+    open fun onPart() {
+    }
+
     abstract fun onMessage(msg: IRCMessage)
-    abstract fun onMode(msg: IRCMessage)
+
+    open fun onMode(msg: IRCMessage) {
+        ctx.write(":$SERVERHOST 324 ${ctx.nickname} ##lobby +n")
+    }
 
     fun sendMessage(user: String, msg: String) {
         ctx.write(":$user PRIVMSG ##lobby :$msg")

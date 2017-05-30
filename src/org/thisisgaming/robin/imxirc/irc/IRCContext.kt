@@ -1,9 +1,8 @@
 package org.thisisgaming.robin.imxirc.irc
 
-import org.thisisgaming.robin.imxirc.SERVERHOST
-import org.thisisgaming.robin.imxirc.VERSION
-import org.thisisgaming.robin.imxirc.sclose
-import org.thisisgaming.robin.imxirc.trimDistance
+import org.thisisgaming.robin.imxirc.*
+import org.thisisgaming.robin.imxirc.irc.chanhandlers.IRCChanHandler
+import org.thisisgaming.robin.imxirc.irc.chanhandlers.LobbyChanHandler
 import java.io.BufferedReader
 import java.io.PrintWriter
 import java.net.Socket
@@ -61,6 +60,7 @@ class IRCContext(private val s: Socket, private val i: BufferedReader, private v
             "LUSERS" -> listUsers()
             "QUIT" -> close()
             "PRIVMSG" -> privmsg(msg)
+            "NAMES" -> {}
             "JOIN" -> chanhandlers[msg.params[0]]?.onJoin()
             "PART" -> chanhandlers[msg.params[0]]?.onPart()
             "MODE" -> if (msg.params.size == 1) chanhandlers[msg.params[0]]?.onMode(msg)
