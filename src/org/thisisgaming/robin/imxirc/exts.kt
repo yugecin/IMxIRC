@@ -7,7 +7,7 @@ fun String.substringFromIndex(idx: Int) = if (0 < idx && idx < this.length) this
 fun String.trimDistance(dist: Int) = if (dist * 2 <= this.length) this.substring(1..this.length - dist * 2) else this
 
 fun Closeable.sclose() {
-    try {
-        this.close()
-    } catch(ignored: Exception) {}
+	try {
+		this.close()
+	} catch(ignored: Exception) {}
 }
