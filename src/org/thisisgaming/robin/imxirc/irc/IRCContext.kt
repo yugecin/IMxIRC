@@ -1,8 +1,7 @@
 package org.thisisgaming.robin.imxirc.irc
 
 import org.thisisgaming.robin.imxirc.*
-import org.thisisgaming.robin.imxirc.irc.chanhandlers.IRCChanHandler
-import org.thisisgaming.robin.imxirc.irc.chanhandlers.LobbyChanHandler
+import org.thisisgaming.robin.imxirc.irc.chanhandlers.*
 import java.io.BufferedReader
 import java.io.PrintWriter
 import java.net.Socket
@@ -12,6 +11,7 @@ class IRCContext(private val s: Socket, private val i: BufferedReader, private v
 
     var nickname = ""
     var clienthost = ""
+    var connectedhost = ""
     val rand = Random()
     var kickstarted = false
     val chanhandlers = HashMap<String, IRCChanHandler>()
@@ -30,6 +30,7 @@ class IRCContext(private val s: Socket, private val i: BufferedReader, private v
 
     init {
         chanhandlers.put("##lobby", LobbyChanHandler(this))
+	    chanhandlers.put("##fb", FbChanHandler(this))
     }
 
     fun work() {
@@ -53,6 +54,7 @@ class IRCContext(private val s: Socket, private val i: BufferedReader, private v
             "NICK" -> nickname = msg.params[0]
             "USER" -> {
                 clienthost = msg.params[1].trimDistance(1)
+                connectedhost = msg.params[2].trimDistance(1)
                 pingthread.start()
             }
             "PONG" -> kickstart()
