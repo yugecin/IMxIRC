@@ -24,7 +24,31 @@ ant jar        --> package a jar
 		<delete dir="${dir.out}" />
 	</target>
 
-	<target name="compile" description="--> compile sources">
+	<target name="-is-kotlin-present">
+		<available file="${dir.lib}/kotlin-compiler.jar" property="kotlin.present"/>
+	</target>
+
+	<target name="get-kotlin" depends="-is-kotlin-present" unless="kotlin.present">
+		<get src="https://github.com/JetBrains/kotlin/releases/download/v1.1.2-2/kotlin-compiler-1.1.2-2.zip"
+				dest="kotlin.zip"
+				verbose="true"
+				skipexisting="true"/>
+		<unzip src="kotlin.zip" dest="${basedir}" />
+		<move file="kotlinc/lib" todir="${basedir}" />
+		<delete dir="kotlinc" />
+		<delete file="kotlin.zip" />
+		<echo>
+
+=============================
+Kotlin files were downloaded,
+  please re-run the task
+=============================
+
+		</echo>
+		<fail message="downloaded kotlin files, please re-run the task" />
+	</target>
+
+	<target name="compile" depends="get-kotlin" description="--> compile sources">
 		<delete dir="${dir.out}/classes" />
 		<mkdir dir="${dir.out}/classes" />
 
