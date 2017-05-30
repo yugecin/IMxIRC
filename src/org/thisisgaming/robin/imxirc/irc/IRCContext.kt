@@ -15,15 +15,31 @@ class IRCContext(private val s: Socket, private val i: BufferedReader, private v
     var clienthost = ""
     val rand = Random()
     var kickstarted = false
+    var running = true
+    val pingthread = Thread({
+        while (true) {
+            // hmmhhmmm not thread safe but it'll stop when it fails right? .. right?
+            while (running && !s.isClosed) {
+                if (!s.isClosed) {
+                    sendPing()
+                }
+                Thread.sleep(3 * 60 * 1000)
+            }
+        }
+    })
 
     fun work() {
-        while (true) {
-            val line = i.readLine()
-            if (line == null) {
-                s.sclose()
-                return
+        try {
+            while (true) {
+                val line = i.readLine()
+                if (line == null) {
+                    s.sclose()
+                    return
+                }
+                handleMessage(parseIRCMessage(line))
             }
-            handleMessage(parseIRCMessage(line))
+        } finally {
+            running = false
         }
     }
 
@@ -33,13 +49,13 @@ class IRCContext(private val s: Socket, private val i: BufferedReader, private v
             "NICK" -> nickname = msg.params[0]
             "USER" -> {
                 clienthost = msg.params[1].trimDistance(1)
-                sendPing()
+                pingthread.start()
             }
             "PONG" -> kickstart()
             "MOTD" -> doMotd()
             "LUSERS" -> listUsers()
             "QUIT" -> close()
-            else -> o.println(":$serverhost NOTICE IMXRC :unknown command ${msg.command}")
+            else -> write(":$serverhost NOTICE IMXRC :unknown command ${msg.command}")
         }
     }
 
