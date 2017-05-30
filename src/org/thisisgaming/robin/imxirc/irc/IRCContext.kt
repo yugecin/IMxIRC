@@ -1,5 +1,6 @@
 package org.thisisgaming.robin.imxirc.irc
 
+import org.thisisgaming.robin.imxirc.SERVERHOST
 import org.thisisgaming.robin.imxirc.VERSION
 import org.thisisgaming.robin.imxirc.sclose
 import org.thisisgaming.robin.imxirc.trimDistance
@@ -11,10 +12,10 @@ import java.util.*
 class IRCContext(private val s: Socket, private val i: BufferedReader, private val o: PrintWriter) {
 
     var nickname = ""
-    val serverhost = "imxirc"
     var clienthost = ""
     val rand = Random()
     var kickstarted = false
+    val chanhandlers = HashMap<String, IRCChanHandler>()
     var running = true
     val pingthread = Thread({
         while (true) {
@@ -27,6 +28,10 @@ class IRCContext(private val s: Socket, private val i: BufferedReader, private v
             }
         }
     })
+
+    init {
+        chanhandlers.put("##lobby", LobbyChanHandler(this))
+    }
 
     fun work() {
         try {
@@ -55,8 +60,20 @@ class IRCContext(private val s: Socket, private val i: BufferedReader, private v
             "MOTD" -> doMotd()
             "LUSERS" -> listUsers()
             "QUIT" -> close()
-            else -> write(":$serverhost NOTICE IMXRC :unknown command ${msg.command}")
+            "PRIVMSG" -> privmsg(msg)
+            "JOIN" -> chanhandlers[msg.params[0]]?.onJoin()
+            "PART" -> chanhandlers[msg.params[0]]?.onPart()
+            "MODE" -> if (msg.params.size == 1) chanhandlers[msg.params[0]]?.onMode(msg)
+            else -> write(":$SERVERHOST NOTICE IMXIRC :unknown command ${msg.command}")
         }
+    }
+
+    private fun privmsg(msg: IRCMessage) {
+        if (msg.params[0][0] == '#') {
+            chanhandlers[msg.params[0]]?.onMessage(msg)
+            return
+        }
+        write(":$SERVERHOST NOTICE IMXRC :unknown privmsg target ${msg.params[0]}")
     }
 
     private fun kickstart() {
@@ -66,28 +83,30 @@ class IRCContext(private val s: Socket, private val i: BufferedReader, private v
         kickstarted = true
         // thanks https://www.alien.net.au/irc/irc2numerics.html
         // also taken from connections with Unreal
-        write(":$serverhost 001 $nickname :Welcome to IMxIRC")
-        write(":$serverhost 002 $nickname :Your host is 127.0.0.1, running version imxirc-$VERSION")
+        write(":$SERVERHOST 001 $nickname :Welcome to IMxIRC")
+        write(":$SERVERHOST 002 $nickname :Your host is 127.0.0.1, running version imxirc-$VERSION")
         //o.println(":$serverhost 003 $nickname :This server was created <date>")
-        write(":$serverhost 004 $nickname imxirc imxirc-$VERSION oix n")
-        write(":$serverhost 005 $nickname NICKLEN=30 TOPICLEN=307 CHANNELLEN=32 PREFIX=(o)@ :are supported by this server")
-        write(":$serverhost 396 $nickname cyber.space :is now your displayed host")
+        write(":$SERVERHOST 004 $nickname imxirc imxirc-$VERSION oix n")
+        write(":$SERVERHOST 005 $nickname NICKLEN=30 TOPICLEN=307 CHANNELLEN=32 PREFIX=(o)@ :are supported by this server")
+        write(":$SERVERHOST 396 $nickname cyber.space :is now your displayed host")
         listUsers()
         doMotd()
         write(":$nickname MODE $nickname :+ix")
+        write(":$nickname JOIN :##lobby")
+        chanhandlers["##lobby"]!!.onJoin()
     }
 
     private fun doMotd() {
-        write(":$serverhost 275 $nickname :- imxirc Message of the Day -")
-        write(":$serverhost 272 $nickname :yey it works")
-        write(":$serverhost 276 $nickname :End of /MOTD command.")
+        write(":$SERVERHOST 275 $nickname :- imxirc Message of the Day -")
+        write(":$SERVERHOST 272 $nickname :yey it works")
+        write(":$SERVERHOST 276 $nickname :End of /MOTD command.")
     }
 
     private fun listUsers() {
-        write(":$serverhost 251 $nickname :There are 1 users and 0 invisible on 1 server")
-        write(":$serverhost 252 $nickname 0 :operator(s) online")
-        write(":$serverhost 254 $nickname 0 :channel(s) formed") // TODO if this even matters
-        write(":$serverhost 255 $nickname :I have 1 clients and 1 servers")
+        write(":$SERVERHOST 251 $nickname :There are 1 users and 0 invisible on 1 server")
+        write(":$SERVERHOST 252 $nickname 0 :operator(s) online")
+        write(":$SERVERHOST 254 $nickname 0 :channel(s) formed") // TODO if this even matters
+        write(":$SERVERHOST 255 $nickname :I have 1 clients and 1 servers")
     }
 
     private fun sendPing() {
@@ -100,7 +119,7 @@ class IRCContext(private val s: Socket, private val i: BufferedReader, private v
         s.sclose()
     }
 
-    private fun write(msg: String) {
+    fun write(msg: String) {
         println("-> $msg")
         o.println(msg)
         o.flush()
